@@ -64,6 +64,6 @@ class ContentWriterSettings
             CoreConstants::CONTENTWRITER_STRATEGY_FILE,
             CoreConstants::CONTENTWRITER_STRATEGY_HANDLER,
             CoreConstants::CONTENTWRITER_STRATEGY_EXPORT
-        ]
+        ];
     }
 }
