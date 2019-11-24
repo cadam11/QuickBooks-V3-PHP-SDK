@@ -14,7 +14,9 @@ class CoreConstants
     /*
      * All content writer strategy we support. Append this lists with new strategies
      */
-    const CONTENTWRITER_STRATEGIES = array('file','handler','export');
+    const CONTENTWRITER_STRATEGY_FILE = 'file';
+    const CONTENTWRITER_STRATEGY_HANDLER = 'handler';
+    const CONTENTWRITER_STRATEGY_EXPORT = 'export';
 
     /*
      * Specific file strategy that we used for Content Writter
