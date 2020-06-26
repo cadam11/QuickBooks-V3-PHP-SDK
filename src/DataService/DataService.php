@@ -27,6 +27,7 @@ use QuickBooksOnline\API\Core\HttpClients\RequestParameters;
 use QuickBooksOnline\API\Core\Http\Serialization\JsonObjectSerializer;
 use QuickBooksOnline\API\Core\Http\Serialization\SerializationFormat;
 use QuickBooksOnline\API\Data\IPPAttachable;
+use QuickBooksOnline\API\Data\IPPEntitlementsResponse;
 use QuickBooksOnline\API\Data\IPPIntuitEntity;
 use QuickBooksOnline\API\Data\IPPTaxService;
 use QuickBooksOnline\API\Data\IPPid;
@@ -264,6 +265,23 @@ class DataService
         $restHandler = $this->restHandler;
         $loggerUsedByRestHandler = $restHandler->getRequestLogger();
         $loggerUsedByRestHandler->setLogDirectory($new_log_location);
+        return $this;
+    }
+
+    /**
+     * Set logging for OAuth calls
+     *
+     * @param Boolean $enableLogs          Turns on logging for OAuthCalls
+     *
+     * @param Boolean $debugMode           Turns on debug mode to log tokens
+     *
+     * @param String $new_log_location     The directory path for storing request and response log
+     *
+     * @return $this
+     */
+    public function setLogForOAuthCalls($enableLogs, $debugMode, $new_log_location)
+    {
+        $this->OAuth2LoginHelper->setLogForOAuthCalls($enableLogs, $debugMode, $new_log_location);
         return $this;
     }
 
@@ -614,6 +632,10 @@ class DataService
      */
     private function sendRequestParseResponseBodyAndHandleHttpError($entity, $uri, $httpsPostBody, $CALLINGMETHOD, $boundaryString = null, $email = null)
     {
+        if ($this->isCreditCardPaymentTxn($entity)) {
+            $uri = str_replace("creditcardpaymenttxn", "creditcardpayment", $uri);
+        }
+
         switch ($CALLINGMETHOD) {
             case DataService::DELETE:
             case DataService::ADD:
@@ -739,6 +761,9 @@ class DataService
           return $this->sendRequestParseResponseBodyAndHandleHttpError($entity, $uri, null, DataService::FINDBYID);
         }else if(is_string($entity) && isset($Id)){
           $uri = implode(CoreConstants::SLASH_CHAR, array('company', $this->serviceContext->realmId, strtolower($entity), $Id));
+          if ($this->isCreditCardPaymentTxn($entity)) {
+            $uri = str_replace("creditcardpaymenttxn", "creditcardpayment", $uri);
+          }
           $requestParameters = new RequestParameters($uri, 'GET', CoreConstants::CONTENTTYPE_APPLICATIONXML, null);
           $restRequestHandler = $this->getRestHandler();
           list($responseCode, $responseBody) = $restRequestHandler->sendRequest($requestParameters, null, null, $this->isThrownExceptionOnError());
@@ -775,14 +800,14 @@ class DataService
         $this->verifyOperationAccess($entity, __FUNCTION__);
         if ($this->isJsonOnly($entity)) {
             $this->forceJsonSerializers();
-        }
+        } 
+
         $httpsPostBody = $this->executeObjectSerializer($entity, $urlResource);
 
         // Builds resource Uri
         $resourceURI = implode(CoreConstants::SLASH_CHAR, array('company', $this->serviceContext->realmId, $urlResource));
 
-        $uri = $this->handleTaxService($entity, $resourceURI);
-
+        $uri = $this->handleTaxService($entity, $resourceURI);        
         // Send request
         return $this->sendRequestParseResponseBodyAndHandleHttpError($entity, $uri, $httpsPostBody, DataService::ADD);
     }
@@ -823,7 +848,6 @@ class DataService
     public function Void($entity)
     {
         $this->serviceContext->IppConfiguration->Logger->RequestLog->Log(TraceLevel::Info, "Called Method Void.");
-
         // Validate parameter
         if (!$entity) {
             $this->serviceContext->IppConfiguration->Logger->RequestLog->Log(TraceLevel::Error, "Argument Null Exception");
@@ -833,8 +857,13 @@ class DataService
 
         // Builds resource Uri
         $httpsPostBody = $this->executeObjectSerializer($entity, $urlResource);
-        $uri = implode(CoreConstants::SLASH_CHAR, array('company', $this->serviceContext->realmId, $urlResource . '?operation=void'));
-
+        $className = get_class($entity);
+        if(strpos($className, CoreConstants::PAYMENTCLASSNAME) !== false){
+          $appendString = CoreConstants::VOID_QUERYPARAMETER_PAYMENT;
+        }else{
+          $appendString = CoreConstants::VOID_QUERYPARAMETER_GENERAL;
+        }
+        $uri = implode(CoreConstants::SLASH_CHAR, array('company', $this->serviceContext->realmId, $urlResource . $appendString));
         // Creates request
         return $this->sendRequestParseResponseBodyAndHandleHttpError($entity, $uri, $httpsPostBody, DataService::VOID);
     }
@@ -878,7 +907,7 @@ class DataService
         $dataMultipart .= "Content-Disposition: form-data; name=\"file_content_{$desiredIdentifier}\"; filename=\"{$fileName}\"" . $newline;
         $dataMultipart .= "Content-Type: {$mimeType}" . $newline;
         $dataMultipart .= 'Content-Transfer-Encoding: base64' . $newline . $newline;
-        $dataMultipart .= chunk_split(base64_encode($imgBits)) . $newline;
+        $dataMultipart .= chunk_split($imgBits) . $newline;
         $dataMultipart .= "--" . $boundaryString . "--" . $newline . $newline; // finish with two eol's!!
 
         return $this->sendRequestParseResponseBodyAndHandleHttpError(null, $uri, $dataMultipart, DataService::UPLOAD, $boundaryString);
@@ -960,9 +989,10 @@ class DataService
      * @param string $query Query to issue
      * @param int $startPosition Starting page number
      * @param int $maxResults Page size
+     * @param string $includes A list of additional fields requested in the entities response
      * @return array Returns an array of entities fulfilling the query. If the response is Empty, it will return NULL
      */
-    public function Query($query, $startPosition = null, $maxResults = null)
+    public function Query($query, $startPosition = null, $maxResults = null, $includes = null)
     {
         $this->serviceContext->IppConfiguration->Logger->RequestLog->Log(TraceLevel::Info, "Called Method Query.");
 
@@ -974,6 +1004,10 @@ class DataService
 
         $httpsUri = implode(CoreConstants::SLASH_CHAR, array('company', $this->serviceContext->realmId, 'query'));
         $httpsPostBody = $this->appendPaginationInfo($query, $startPosition, $maxResults);
+        
+        if(!is_null($includes)) {
+            $httpsUri .= "?include=$includes";
+        }
 
         $requestParameters = $this->getPostRequestParameters($httpsUri, $httpsContentType);
         $restRequestHandler = $this->getRestHandler();
@@ -989,9 +1023,9 @@ class DataService
                 $responseXmlObj = simplexml_load_string($responseBody);
                 if ($responseXmlObj && $responseXmlObj->QueryResponse) {
                     $tmpXML = $responseXmlObj->QueryResponse->asXML();
+                    $parsedResponseBody = $this->responseSerializer->Deserialize($tmpXML, false);
+                    $this->serviceContext->IppConfiguration->Logger->CustomLogger->Log(TraceLevel::Info, $parsedResponseBody);
                 }
-                $parsedResponseBody = $this->responseSerializer->Deserialize($tmpXML, false);
-                $this->serviceContext->IppConfiguration->Logger->CustomLogger->Log(TraceLevel::Info, $parsedResponseBody);
 
             } catch (\Exception $e) {
                 throw new \Exception("Exception appears in converting Response to XML.");
@@ -1315,6 +1349,18 @@ class DataService
         $IPPTaxServiceClassWIthNameSpace = "QuickBooksOnline\\API\\Data\\IPPTaxService";
 
         return class_exists($IPPTaxServiceClassWIthNameSpace) && ($entity instanceof $IPPTaxServiceClassWIthNameSpace);
+    }
+
+    private function isCreditCardPaymentTxn($entity)
+    {
+        $IPPCreditCardPaymentTxnClass = "QuickBooksOnline\\API\\Data\\IPPCreditCardPaymentTxn";
+
+        if (class_exists($IPPCreditCardPaymentTxnClass) && ($entity instanceof $IPPCreditCardPaymentTxnClass))
+            return true;
+        else if (is_string($entity) && $entity == "CreditCardPaymentTxn")
+            return true;
+
+        return false;
     }
 
     /**
@@ -1663,12 +1709,39 @@ class DataService
     }
 
     /**
+     * Get the Entitlement Response
+     * @return \SimpleXMLElement Xml
+     */
+    public function getEntitlementsResponse()
+    {
+        $currentServiceContext = $this->getServiceContext();
+        if (!isset($currentServiceContext) || empty($currentServiceContext->realmId)) {
+           throw new SdkException("Please Setup Service Context before making get entitlements response call.");
+        }
+        //The Preferences URL
+        $uri = $this->getServiceContext()->IppConfiguration->BaseUrl->Qbo;
+        $requestParameters = new RequestParameters($uri, 'GET', CoreConstants::CONTENTTYPE_APPLICATIONXML, null);
+        $restRequestHandler = $this->getRestHandler();
+        $entitlementsUri = $this->getServiceContext()->IppConfiguration->BaseUrl->Qbo . "manage/entitlements/v3/" . $this->serviceContext->realmId;
+        list($responseCode, $responseBody) = $restRequestHandler->sendRequest($requestParameters, null, $entitlementsUri, $this->isThrownExceptionOnError());
+        $faultHandler = $restRequestHandler->getFaultHandler();
+        //$faultHandler now is true or false
+        if ($faultHandler) {
+            $this->lastError = $faultHandler;
+            return null;
+        } else {
+            $this->lastError = false;
+            return simplexml_load_string($responseBody);
+        }
+    }
+
+    /**
      * Get the actual ID string value of either an IPPid object, or an Id string
      * @param Object $id
      * @return String Id
      */
     private function getIDString($id){
-        if($id instanceof IPPid || $id instanceof QuickBooksOnline\API\Data\IPPid){
+        if($id instanceof IPPid){
             return (String)$id->value;
         }else{
             return (String)$id;
