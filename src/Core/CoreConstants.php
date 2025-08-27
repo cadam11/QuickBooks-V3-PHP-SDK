@@ -7,7 +7,7 @@ namespace QuickBooksOnline\API\Core;
 class CoreConstants
 {
     //Set the default minor version
-    const DEFAULT_SDK_MINOR_VERSION = "51";
+    const DEFAULT_SDK_MINOR_VERSION = "75";
     const DEFAULT_LOGGINGLOCATION = "/tmp/IdsLogs";
 
     const PHP_CLASS_PREFIX = 'IPP';
@@ -213,8 +213,7 @@ class CoreConstants
      */
     const Id = "Id";
 
-    const PAYMENTCLASSNAME = "IPPPayment";
-
+    const PAYMENTCLASSNAME = ["payment", "salesreceipt"];
     const VOID_QUERYPARAMETER_GENERAL = '?operation=void';
     const VOID_QUERYPARAMETER_PAYMENT = '?operation=update&include=void';
 
@@ -300,7 +299,7 @@ class CoreConstants
      * The Request source header value.
      * @var string REQUESTSOURCEHEADER
      */
-    const USERAGENT = "V3PHPSDK5.3.8";
+    const USERAGENT = "V3PHPSDK6.2.0";
 
     public static function getType($string, $return=1)
     {

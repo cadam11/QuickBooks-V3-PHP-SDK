@@ -1867,6 +1867,7 @@
 			<xs:enumeration value="PriceLevel"/>
 			<xs:enumeration value="Purchase"/>
 			<xs:enumeration value="PurchaseOrder"/>
+			<xs:enumeration value="RecurringTransaction"/>
 			<xs:enumeration value="RefundReceipt"/>
 			<xs:enumeration value="ReimburseCharge"/>
 			<xs:enumeration value="Report"/>
@@ -1890,6 +1891,7 @@
 			<xs:enumeration value="Vendor"/>
 			<xs:enumeration value="VendorCredit"/>
 			<xs:enumeration value="CustomFieldDefinition"/>
+			<xs:enumeration value="ChangeOrder"/>
 		</xs:restriction>
 	</xs:simpleType>
 	<xs:simpleType name="ReportBasisEnum">

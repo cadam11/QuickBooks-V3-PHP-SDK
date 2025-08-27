@@ -24,12 +24,8 @@ $dataService = DataService::Configure(array(
 $dataService->setLogLocation("/Users/hlu2/Desktop/newFolderForLog");
 
 $dataService->throwExceptionOnError(true);
-//Add a new Invoice
-$theResourceObj = Payment::create([
-  "SyncToken" => "1",
-  "Id" => "66",
-  "sparse" => true
-]);
+
+$theResourceObj = $dataService->FindbyId('payment', 11);
 
 $resultingObj = $dataService->void($theResourceObj);
 

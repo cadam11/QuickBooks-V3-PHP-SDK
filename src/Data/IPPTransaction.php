@@ -314,8 +314,8 @@ class IPPTransaction
 	public $Tag;
 	/**
 	 * @Definition 
-                                    Product: QBO
-                                    Description: Details of the Approval Status for current transaction in QBO workflows.
+                                    Product: QBO
+                                    Description: Details of the Approval Status for current transaction in QBO workflows.
 							
 	 * @xmlType element
 	 * @xmlNamespace http://schema.intuit.com/finance/v3
@@ -324,6 +324,72 @@ class IPPTransaction
 	 * @var com\intuit\schema\finance\v3\IPPTxnApprovalInfo
 	 */
 	public $TxnApprovalInfo;
+	/**
+	 * @Definition 
+								Product: QBO
+								Description: Reference to the
+								RecurTemplate which was used to create the Transaction
+								InputType: Read
+							
+	 * @xmlType element
+	 * @xmlNamespace http://schema.intuit.com/finance/v3
+	 * @xmlMinOccurs 0
+	 * @xmlName RecurDataRef
+	 * @var com\intuit\schema\finance\v3\IPPReferenceType
+	 */
+	public $RecurDataRef;
+	/**
+	 * @Definition 
+								Product: QBO
+								Description: The Recurring Schedule information for the Transaction
+							
+	 * @xmlType element
+	 * @xmlNamespace http://schema.intuit.com/finance/v3
+	 * @xmlMinOccurs 0
+	 * @xmlName RecurringInfo
+	 * @var com\intuit\schema\finance\v3\IPPRecurringInfo
+	 */
+	public $RecurringInfo;
+	/**
+	 * @Definition 
+								Product: ALL
+								Description: Project identifier
+								References to the project this transaction
+								is associated with
+							
+	 * @xmlType element
+	 * @xmlNamespace http://schema.intuit.com/finance/v3
+	 * @xmlMinOccurs 0
+	 * @xmlName ProjectRef
+	 * @var com\intuit\schema\finance\v3\IPPReferenceType
+	 */
+	public $ProjectRef;
+	/**
+	 * @Definition 
+                                Product: ALL
+                                Description: Project Estimate identifier
+                                The amount or equivalent paid or charged for a product/service
+                            
+	 * @xmlType element
+	 * @xmlNamespace http://schema.intuit.com/finance/v3
+	 * @xmlMinOccurs 0
+	 * @xmlName TotalCostAmount
+	 * @var float
+	 */
+	public $TotalCostAmount;
+	/**
+	 * @Definition 
+                                Product: ALL
+                                Description: Project Estimate identifier
+                                The amount or equivalent paid or charged for a product/service when using multi-currency
+                            
+	 * @xmlType element
+	 * @xmlNamespace http://schema.intuit.com/finance/v3
+	 * @xmlMinOccurs 0
+	 * @xmlName HomeTotalCostAmount
+	 * @var float
+	 */
+	public $HomeTotalCostAmount;
 
 
 } // end class IPPTransaction
