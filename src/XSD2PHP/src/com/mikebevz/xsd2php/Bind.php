@@ -171,11 +171,13 @@ class Bind extends Common
                         }
                         // end of fix
                     } else {
-                        throw new \RuntimeException('Class ' . get_class($model) . ' does not have property ' . $name);
+                        // Silently skip unknown properties to handle API changes gracefully
+                        continue;
                     }
                 } else {
                     if (!property_exists($model, $name)) {
-                        throw new \RuntimeException("Model " . get_class($model) . " does not have property " . $name);
+                        // Silently skip unknown properties to handle API changes gracefully
+                        continue;
                     }
                     if (!class_exists($className)) {
                         //print_r($className."\n");
