@@ -132,7 +132,8 @@ class Bind extends Common
                 try {
                     $propertyDocs = $refl->getProperty($name)->getDocComment();
                 } catch (\ReflectionException $e) {
-                    throw new \RuntimeException($e->getMessage() . ". Class " . get_class($model));
+                    // throw new \RuntimeException($e->getMessage() . ". Class " . get_class($model));
+                    continue;
                 }
                 $docs = $this->parseDocComments($propertyDocs);
                 $className = $docs['var'];

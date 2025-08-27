@@ -859,7 +859,7 @@ class DataService
         // Builds resource Uri
         $httpsPostBody = $this->executeObjectSerializer($entity, $urlResource);
         $className = $this->getEntityResourceName($entity);
-        if(in_array($className, CoreConstants::PAYMENTCLASSNAME)) {
+        if(in_array($className, [PAYMENTCLASSNAME_PAYMENT, PAYMENTCLASSNAME_SALESRECEIPT])) {
             $appendString = CoreConstants::VOID_QUERYPARAMETER_PAYMENT;
         } else{
             $appendString = CoreConstants::VOID_QUERYPARAMETER_GENERAL;
